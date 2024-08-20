@@ -1,25 +1,30 @@
 # Builder Image
-FROM cgr.dev/chainguard/python:latest-dev@sha256:628cdda3c986b81162a8bc06fd3ad1c9213d88bf7c1f16267736b598a4a20520 as builder
+FROM python:3.9.7-slim-bullseye as builder
 
 ENV PATH="/app/venv/bin:$PATH"
 
 WORKDIR /app
+USER root
+# Ensure the /app directory has the correct permissions
+RUN mkdir -p /app
 
 RUN python -m venv /app/venv
 COPY requirements.txt .
-# use newest pip version to have less CVE
+# Use the newest pip version to have fewer CVEs
 RUN python -m pip install --upgrade pip
 # Install the dependencies from the requirements.txt file
 RUN pip install --no-cache-dir -r requirements.txt
 
 
 # End container image
-FROM cgr.dev/chainguard/python:latest@sha256:8ab7150acbdfc4dc445503a67c7f69af2eeba6a9b476fb669bb5b2163826ac5a
+FROM python:3.9.7-slim-bullseye
 
 WORKDIR /app
 ENV PATH="/venv/bin:$PATH"
 
 COPY main.py .
+RUN chmod +x /app/main.py
+RUN chmod 777 /app/main.py
 COPY --from=builder /app/venv /venv
 
 # Run the main script using Python
